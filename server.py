@@ -75,7 +75,6 @@ class WebSocket(tornado.websocket.WebSocketHandler):
             print("Unsupported function: " + message)
 
     def loop(self):
-        print "testing"
         """Sends camera images in an infinite loop."""
         sio = io.StringIO()
 
