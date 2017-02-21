@@ -70,6 +70,8 @@ class WebSocket(tornado.websocket.WebSocketHandler):
             self.camera_loop = PeriodicCallback(self.loop, 10)
             self.camera_loop.start()
 
+        if message == "donation"
+            print("Donation Accepted")
         # Extensibility for other methods
         else:
             print("Unsupported function: " + message)
