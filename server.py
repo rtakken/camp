@@ -19,33 +19,39 @@ import tornado.web
 import tornado.websocket
 from tornado.ioloop import PeriodicCallback
 
-
-# class IndexHandler(tornado.web.RequestHandler):
-
-#     def get(self):
-#         if args.require_login and not self.get_secure_cookie(COOKIE_NAME):
-#             self.redirect("/login")
-#         else:
-#             self.render("index.html", port=args.port)
+# Hashed password for comparison and a cookie for login cache
+ROOT = os.path.normpath(os.path.dirname(__file__))
+with open(os.path.join(ROOT, "password.txt")) as in_file:
+    PASSWORD = in_file.read().strip()
+COOKIE_NAME = "camp"
 
 
-# class LoginHandler(tornado.web.RequestHandler):
+class IndexHandler(tornado.web.RequestHandler):
 
-#     def get(self):
-#         self.render("login.html")
+    def get(self):
+        if args.require_login and not self.get_secure_cookie(COOKIE_NAME):
+            self.redirect("/login")
+        else:
+            self.render("index.html", port=args.port)
 
-#     def post(self):
-#         password = self.get_argument("password", "")
-#         if hashlib.sha512(password).hexdigest() == PASSWORD:
-#             self.set_secure_cookie(COOKIE_NAME, str(time.time()))
-#             self.redirect("/")
-#         else:
-#             time.sleep(1)
-#             self.redirect(u"/login?error")
+
+class LoginHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        password = self.get_argument("password", "")
+        if hashlib.sha512(password).hexdigest() == PASSWORD:
+            self.set_secure_cookie(COOKIE_NAME, str(time.time()))
+            self.redirect("/")
+        else:
+            time.sleep(1)
+            self.redirect(u"/login?error")
 
 
 class WebSocket(tornado.websocket.WebSocketHandler):
-    
+
     def check_origin(self, origin):
         return True
 
@@ -69,6 +75,7 @@ class WebSocket(tornado.websocket.WebSocketHandler):
             print("Unsupported function: " + message)
 
     def loop(self):
+        print "testing"
         """Sends camera images in an infinite loop."""
         sio = io.StringIO()
 
@@ -117,8 +124,12 @@ if args.resolution in resolutions:
 else:
     raise Exception("%s not in resolution options." % args.resolution)
 
-handlers = [(r"/websocket", WebSocket)]
-application = tornado.web.Application(handlers)
+handlers = [(r"/", IndexHandler), (r"/login", LoginHandler),
+            (r"/websocket", WebSocket),
+            (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': ROOT})]
+application = tornado.web.Application(handlers, cookie_secret=PASSWORD)
 application.listen(args.port)
+
+webbrowser.open("http://localhost:%d/" % args.port, new=2)
 
 tornado.ioloop.IOLoop.instance().start()
